@@ -7,12 +7,20 @@ export default class Field {
   stones: Stone[];
   width: number;
   height: number;
+  box: Point[];
+  index: number;
 
-  constructor(pos: Point) {
+  constructor(pos: Point, idx: number) {
+    this.index = idx;
     this.pos = pos.copy();
     this.width = Const.FIELD_SZ;
     this.height = Const.FIELD_SZ;
+    this.box = [pos.copy(), new Point(this.width + pos.x, this.height + pos.y)];
     this.stones = [];
+  }
+
+  inBox(pt: Point): boolean {
+    return !(pt.x < this.box[0].x || pt.x > this.box[1].x || pt.y < this.box[0].y || pt.y > this.box[1].y);
   }
 
   addStone(stn: Stone) {
