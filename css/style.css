@@ -1,14 +1,17 @@
 * {
   margin: 0;
   border: 0;
+  font-family: 'Montserrat', sans-serif;
 }
 
 body {
-  background-color: #222;
+  background-color: #666;
   text-align: center;
 }
 
 canvas {
   border: 1px solid #000;
+  border-radius: 5px;
+  background: #222;
   margin: 50px auto;
 }
