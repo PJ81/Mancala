@@ -27,7 +27,6 @@ class GoM extends Game {
     this.canvas.addEventListener("click", (me: MouseEvent) => this.onClick(me, null));
     this.canvas.addEventListener("touchstart", (te: TouchEvent) => this.onClick(null, te));
     this.update = (dt: number) => this.board.update(dt);
-    this.board.mancalas[1].addStone(this.board.fields[0].removeStone())
     this.loop();
   }
 
@@ -43,7 +42,7 @@ class GoM extends Game {
       pt.y = te.touches[0].clientY - (te.srcElement as HTMLCanvasElement).offsetTop;
     }
     const field = this.board.getField(pt);
-    if (field !== null && this.board.getFieldCount(field) > 0) {
+    if (field !== null) {
       this.state = Const.PERFORM;
       this.board.moveStones(field);
     }

@@ -5,9 +5,11 @@ export default class Stone {
   pos: Point;
   color: string;
   rad: number;
+  target: Point;
 
   constructor() {
     this.rad = 16;
+    this.target = new Point();
     this.pos = new Point();
     this.color = Const.COLORS[Math.floor(Math.random() * Const.COLORS.length)];
   }
