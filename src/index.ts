@@ -20,10 +20,10 @@ class GoM extends Game {
         case Const.NEXT_PLAYER: this.player = !this.player; break;
         case 1:
         case 2:
+        case 3:
           this.win = res;
           this.state = Const.GAME_OVER;
           break;
-        case 3: break;
       }
     });
     this.canvas.addEventListener("click", (me: MouseEvent) => this.onClick(me, null));
@@ -40,7 +40,11 @@ class GoM extends Game {
     if (this.state !== Const.GAME_OVER) {
       pl = `Player ${this.player ? 1 : 2}`;
     } else {
-      pl = `PLAYER ${this.win} WINS!`;;
+      if (this.win === 3) {
+        pl = "TIE GAME!";
+      } else {
+        pl = `PLAYER ${this.win} WINS!`;
+      }
     }
     this.ctx.fillText(pl, (Const.WIDTH >> 1) - (this.ctx.measureText(pl).width >> 1), (Const.HEIGHT >> 1) + 20);
 

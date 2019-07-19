@@ -16,7 +16,9 @@ export const
   SETTING = 16,
   MANCALA = 32,
   EMPTY = 64,
-  GAME_OVER = 128,
+  COLLECT_STONES = 128,
+  MOVE_ALL = 256,
+  GAME_OVER = 512,
 
   SAME_PLAYER = 0,
   NEXT_PLAYER = 4,
