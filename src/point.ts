@@ -12,17 +12,44 @@ export default class Point {
     this.y = y;
   }
 
-  equals(pt: Point) {
+  equals(pt: Point): boolean {
     return pt.x === this.x && pt.y === this.y;
   }
 
-  dist(pt: Point) {
+  length(): number {
+    return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
+
+  normalize() {
+    const len = this.length();
+    this.x /= len;
+    this.y /= len;
+  }
+
+  rotate(a: number) {
+    const cos = Math.cos(a),
+      sin = Math.sin(a);
+    this.set(this.x * cos - this.y * sin, this.x * sin + this.y * cos);
+  }
+
+  clamp(min: number, max: number) {
+    this.x = Math.min(Math.max(this.x, min), max);
+    this.y = Math.min(Math.max(this.y, min), max);
+  }
+
+  dist(pt: Point): number {
     let a = pt.x - this.x,
       b = pt.y - this.y;
     return Math.sqrt(a * a + b * b);
   }
 
-  copy() {
+  copy(): Point {
     return new Point(this.x, this.y);
+  }
+
+  heading(pt: Point): Point {
+    const h = new Point(pt.x - this.x, pt.y - this.y);
+    h.normalize();
+    return h;
   }
 }

@@ -6,24 +6,25 @@ import Point from "./point.js";
 
 export default class Board {
   fields: Field[];
-  mancalas: Mancala[];
-  callBack: any;
+  stone: Stone;
+  callBack: Function;
   movingField: number;
   movingCount: number;
+  movingTo: number;
   state: number;
-  stone: Stone;
+  lastStone: boolean;
+  player: boolean;
 
-  constructor(callBack: any) {
+  constructor(callBack: Function) {
     this.callBack = callBack;
     this.state = Const.NONE;
+    this.lastStone;
+    this.player;
     this.stone;
+    this.movingTo;
     this.movingField;
     this.movingCount;
     this.fields = [];
-    this.mancalas = [
-      new Mancala(new Point(Const.WIDTH - Const.MANC_WID - Const.GAP, Const.GAP + Const.FIELD_SZ)),
-      new Mancala(new Point(Const.GAP, Const.GAP + Const.FIELD_SZ))
-    ];
 
     const step = Const.GAP + Const.FIELD_SZ;
     let fpx = Const.GAP + Const.GAP + Const.MANC_WID,
@@ -31,7 +32,7 @@ export default class Board {
       idx = 0;
     for (let g = 0; g < 2; g++) {
       for (let f = 0; f < 6; f++) {
-        const fld = new Field(new Point(fpx, fpy), idx++);
+        const fld = new Field(new Point(fpx, fpy), idx++, g === 0);
         for (let s = 0; s < 4; s++) {
           const stn = new Stone();
           fld.addStone(stn);
@@ -41,27 +42,33 @@ export default class Board {
       }
       fpy = Const.GAP;
       fpx -= step;
+      if (g === 0) {
+        this.fields.push(new Mancala(new Point(Const.WIDTH - Const.MANC_WID - Const.GAP, Const.GAP + Const.FIELD_SZ), true));
+        idx++
+      } else {
+        this.fields.push(new Mancala(new Point(Const.GAP, Const.GAP + Const.FIELD_SZ), false));
+      }
     }
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    this.mancalas.forEach(m => m.draw(ctx));
     this.fields.forEach(f => f.draw(ctx));
     if (this.stone) {
       this.stone.draw(ctx);
     }
   }
 
-  moveStones(field: number) {
+  moveStones(field: number, player: boolean) {
     this.movingField = field;
     this.movingCount = 1;
     this.state = Const.RETRIEVING;
+    this.player = player;
   }
 
-  getField(pt: Point): number {
+  getField(pt: Point, pl: boolean): number {
     for (let r of this.fields) {
-      if (r.inBox(pt)) {
-        return r.count() ? r.index : null;
+      if (!(r instanceof Mancala) && r.inBox(pt)) {
+        return (r.count() && r.player === pl) ? r.index : null;
       }
     }
     return null;
@@ -71,30 +78,66 @@ export default class Board {
     switch (this.state) {
       case Const.RETRIEVING:
         this.stone = this.fields[this.movingField].removeStone();
-        if (this.stone) {
-          this.fields[this.movingField + this.movingCount].makePosition(this.stone.target);
-          this.state = Const.MOVING;
+        this.lastStone = this.fields[this.movingField].lastStone;
+        const pt = new Point();
+        this.movingTo = this.movingField + this.movingCount;
+        this.movingTo = this.movingTo > 13 ? this.movingTo - 14 : this.movingTo;
+        if (this.fields[this.movingTo] instanceof Mancala) {
+          if (this.fields[this.movingTo].player === this.player) {
+            this.fields[this.movingTo].makePosition(pt);
+          } else {
+            this.movingCount++;
+            this.movingTo = this.movingField + this.movingCount;
+            this.movingTo = this.movingTo > 13 ? this.movingTo - 14 : this.movingTo;
+            this.fields[this.movingTo].makePosition(pt);
+          }
         } else {
-          this.state = Const.NONE;
-          this.callBack(true);
+          this.fields[this.movingTo].makePosition(pt);
         }
+        this.stone.setTarget(pt);
+        this.state = Const.MOVING;
         break;
       case Const.MOVING:
-        const dist = this.stone.pos.dist(this.stone.target);
-        if (dist > 120) {
-          this.stone.pos.x += 30 * dt * dist;
-          this.stone.pos.y += 30 * dt * dist;
-        } else {
-          this.stone.pos = this.stone.target;
-          this.state = Const.SETTING;
-        }
+        this.state = this.stone.move(dt) ? Const.SETTING : Const.MOVING;
         break;
       case Const.SETTING:
-        this.fields[this.movingField + this.movingCount].addStone(this.stone);
-        this.stone = null;
-        this.state = Const.RETRIEVING;
-        this.movingCount++;
+        this.fields[this.movingTo].addStone(this.stone);
+        this.state = Const.NONE;
+        this.stone = null
+        if (this.lastStone) {
+          const res = this.checkRules();
+          if (res & Const.MANCALA) {
+            this.callBack(Const.SAME_PLAYER);
+            return;
+          } else if (res & Const.EMPTY) {
+            //
+          } else if (res & Const.GAME_OVER) {
+            //move all the other stones to the other player mancala
+            // counts mancalas - call back with winner!
+            this.callBack(2);
+          }
+          this.callBack(Const.NEXT_PLAYER);
+        } else {
+          this.state = Const.RETRIEVING;
+          this.movingCount++;
+        }
         break;
     }
+  }
+
+  checkRules(): number {
+    // is mancala
+    let res = 0;
+    res += this.fields[this.movingTo] instanceof Mancala ? Const.MANCALA : 0;
+    // landed is empty
+    res += !(this.fields[this.movingTo] instanceof Mancala) && this.fields[this.movingTo].count() === 0 ? Const.EMPTY : 0;
+    // is game over
+    let c = 0, p = this.player ? 0 : 7;
+    for (let s = 0; s < 6; s++) {
+      c += this.fields[s + p].count();
+    }
+    res += c === 0 ? Const.GAME_OVER : 0;
+
+    return res;
   }
 }

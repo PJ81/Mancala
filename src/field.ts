@@ -9,27 +9,39 @@ export default class Field {
   height: number;
   box: Point[];
   index: number;
-  removeStone: () => Stone;
-  count: () => number;
+  lastStone: boolean;
+  player: boolean;
 
-  constructor(pos: Point, idx: number) {
+  count: () => number;
+  inBox: (pt: Point) => boolean;
+
+  constructor(pos: Point, idx: number, pl: boolean) {
     this.index = idx;
+    this.lastStone;
+    this.player = pl;
     this.pos = pos.copy();
     this.width = Const.FIELD_SZ;
     this.height = Const.FIELD_SZ;
     this.box = [pos.copy(), new Point(this.width + pos.x, this.height + pos.y)];
     this.stones = [];
     this.count = (): number => this.stones.length;
-    this.removeStone = (): Stone => this.count() ? this.stones.shift() : null;
+    this.inBox = (pt: Point): boolean => !(pt.x < this.box[0].x || pt.x > this.box[1].x || pt.y < this.box[0].y || pt.y > this.box[1].y);
   }
 
-  inBox(pt: Point): boolean {
-    return !(pt.x < this.box[0].x || pt.x > this.box[1].x || pt.y < this.box[0].y || pt.y > this.box[1].y);
+  removeStone(): Stone {
+    const c = this.count();
+    if (c === 1) {
+      this.lastStone = true;
+    }
+    return this.stones.shift();
   }
 
   addStone(stn: Stone) {
-    this.makePosition(stn.pos);
+    if (stn.pos.x < 1) {
+      this.makePosition(stn.pos);
+    }
     this.stones.push(stn);
+    this.lastStone = false;
   }
 
   makePosition(p: Point) {
@@ -39,7 +51,6 @@ export default class Field {
       r = (Math.random() < .5 ? -(Math.random() * (h - 25) + 5) : Math.random() * (h - 25) + 5);
     p.set(this.pos.x + w + c, this.pos.y + h + r);
   }
-
 
   draw(ctx: CanvasRenderingContext2D) {
     ctx.fillStyle = "#333";
